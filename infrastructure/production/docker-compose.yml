@@ -1,0 +1,92 @@
+services:
+  traefik:
+    image: traefik:v3
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+
+      - "--certificatesresolvers.le.acme.tlschallenge=true"
+      - "--certificatesresolvers.le.acme.email=${LETSENCRYPT_EMAIL}"
+      - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  watchtower:
+    image: containrrr/watchtower
+    restart: unless-stopped
+    command:
+      - "--label-enable"
+      - "--cleanup"
+      - "--interval=300"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  websites-core:
+    image: tobiasbenkner/websites-core
+    restart: unless-stopped
+    environment:
+      - DATABASE_URI=${DATABASE_URL}
+      - PAYLOAD_SECRET=${PAYLOAD_SECRET}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+    volumes:
+      - ./media:/apps/core/media
+      - ./videos:/apps/core/videos
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.core.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.core.tls=true
+      - traefik.http.routers.core.tls.certresolver=le
+      - traefik.http.services.core.loadbalancer.server.port=3000
+      - com.centurylinklabs.watchtower.enable=true
+
+  websites-db:
+    image: mongo:noble
+    restart: unless-stopped
+    command:
+      - --storageEngine=wiredTiger
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DATABASE_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+    volumes:
+      - ./db:/data/db
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  websites-redis:
+    image: redis:8
+    restart: unless-stopped
+    volumes:
+      - ./redis:/data
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  websites-worker:
+    image: tobiasbenkner/websites-worker
+    restart: unless-stopped
+    environment:
+      PAYLOAD_API_URL: http://websites-core:3000/api
+      PAYLOAD_API_KEY: ${PAYLOAD_API_KEY}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      VIDEO_PATH: /app
+    volumes:
+      - ./videos:/app/videos
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
