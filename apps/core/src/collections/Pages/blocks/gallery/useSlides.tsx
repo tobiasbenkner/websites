@@ -1,25 +1,21 @@
 "use client"
 import { useCurrentBreakpoint } from "@/utilities/useCurrentBreakpoint";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
+
+const BREAKPOINT_LIMITS = {
+    xs: 1,
+    sm: 2,
+    md: 3,
+    lg: 4,
+    xl: 4,
+} as const;
 
 export function useSlidesPerView(userValue: number) {
-    const [slidesPerView, setSlidesPerView] = useState(1);
     const breakpoint = useCurrentBreakpoint();
 
-    useEffect(() => {
-        if (breakpoint === "xs") {
-            setSlidesPerView(Math.min(1, userValue));
-        } else if (breakpoint === "sm") {
-            setSlidesPerView(Math.min(2, userValue));
-        } else if (breakpoint === "md") {
-            setSlidesPerView(Math.min(3, userValue));
-        } else if (breakpoint === "lg") {
-            setSlidesPerView(Math.min(4, userValue));
-        } else if (breakpoint === "xl") {
-            setSlidesPerView(Math.min(4, userValue));
-        } else {
-            setSlidesPerView(userValue);
-        }
+    const slidesPerView = useMemo(() => {
+        const limit = BREAKPOINT_LIMITS[breakpoint as keyof typeof BREAKPOINT_LIMITS];
+        return limit ? Math.min(limit, userValue) : userValue;
     }, [breakpoint, userValue]);
 
     return slidesPerView;

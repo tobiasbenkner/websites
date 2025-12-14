@@ -1,15 +1,13 @@
-import { FlatCompat } from '@eslint/eslintrc'
-
-const compat = new FlatCompat({
-    baseDirectory: import.meta.dirname,
-})
+import nextTypescript from "eslint-config-next/typescript";
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 
 const eslintConfig = [
     {
         ignores: ['.next/**', 'node_modules/**', 'dist/**', '.turbo/**'],
     },
-    ...compat.config({
-        extends: ['next/core-web-vitals'],
+    ...nextTypescript,
+    ...nextCoreWebVitals,
+    {
         rules: {
             '@next/next/no-img-element': 'off',
             '@typescript-eslint/ban-ts-comment': 'warn',
@@ -24,7 +22,7 @@ const eslintConfig = [
                 },
             ],
         },
-    }),
+    },
 ]
 
 export default eslintConfig
