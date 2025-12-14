@@ -1,5 +1,5 @@
 {
-  "name": "core",
+  "name": "@tobiasbenkner/websites/core",
   "version": "1.0.0",
   "description": "A blank template to get started with Payload 3.0",
   "license": "MIT",
@@ -16,8 +16,8 @@
     "test": "pnpm run test:int && pnpm run test:e2e",
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --no-experimental-strip-types\" pnpm exec playwright test",
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
-    "docker:build": "docker build -t tobiasbenkner/websites/core .",
-    "docker:push": "docker push tobiasbenkner/websites/core"
+    "docker:build": "docker build -t tobiasbenkner/websites-core:latest .",
+    "docker:push": "docker push tobiasbenkner/websites-core:latest"
   },
   "dependencies": {
     "@payloadcms/db-mongodb": "3.67.0",

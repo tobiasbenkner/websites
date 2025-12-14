@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "docker:build": "turbo run docker:build",
+    "docker:push": "turbo run docker:push",
     "check-types": "turbo run check-types",
     "update-deps": "npm-check-updates -u --deep"
   },
@@ -16,7 +18,8 @@
     "onlyBuiltDependencies": [
       "sharp",
       "esbuild",
-      "unrs-resolver"
+      "unrs-resolver",
+      "msgpackr-extract"
     ]
   }
 }

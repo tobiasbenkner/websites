@@ -1,12 +1,12 @@
 {
-  "name": "@websites/worker",
+  "name": "@tobiasbenkner/websites/worker",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "ts-node ./src/worker.ts",
     "build": "esbuild src/worker.ts --bundle --platform=node --target=node22 --outfile=dist/worker.js --external:fsevents",
-    "docker:build": "docker build -t tobiasbenkner/websites/worker .",
-    "docker:push": "docker push tobiasbenkner/websites/worker"
+    "docker:build": "docker build -t tobiasbenkner/websites-worker:latest .",
+    "docker:push": "docker push tobiasbenkner/websites-worker:latest"
   },
   "dependencies": {
     "axios": "^1.11.0",
