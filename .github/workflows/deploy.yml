@@ -1,0 +1,76 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      actions: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest successful build SHA
+        id: get_sha
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Suche letzten erfolgreichen Run auf main..."
+          LAST_SUCCESSFUL_SHA=$(gh run list --branch main --workflow "Build and Deploy" --status success --json headSha --limit 1 --jq '.[0].headSha')
+
+          if [ -z "$LAST_SUCCESSFUL_SHA" ]; then
+            echo "Kein vorheriger erfolgreicher Build gefunden. Setze Fallback auf vorherigen Commit."
+            LAST_SUCCESSFUL_SHA=$(git rev-parse HEAD^)
+          fi
+
+          echo "Gefundener Base SHA: $LAST_SUCCESSFUL_SHA"          
+          echo "BASE_SHA=$LAST_SUCCESSFUL_SHA" >> $GITHUB_ENV
+
+      - name: Docker Login
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Turbo Build
+        run: npx turbo run build --filter=...[${{ env.BASE_SHA }}] --continue=always
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          TURBO_TELEMETRY_DISABLED: 1
+
+      - name: Turbo Docker Build
+        run: npx turbo run docker:build --filter=...[${{ env.BASE_SHA }}]
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          TURBO_TELEMETRY_DISABLED: 1
+
+      - name: Turbo Docker Push
+        run: npx turbo run docker:push --filter=...[${{ env.BASE_SHA }}]
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          TURBO_TELEMETRY_DISABLED: 1
