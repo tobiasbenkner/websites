@@ -1,0 +1,18 @@
+services:
+  redis:
+    image: redis:8
+    ports:
+      - 6379:6379
+    volumes:
+      - ./redis_data:/data
+
+  redis-ui:
+    image: redis/redisinsight:latest
+    ports:
+      - 5540:5540
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    volumes:
+      - ./redisinsight_data:/data

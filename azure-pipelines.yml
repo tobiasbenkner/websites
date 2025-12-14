@@ -1,0 +1,78 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  - group: secrets
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+    fetchDepth: "0"
+
+  - task: Bash@3
+    displayName: "Get latest successful build"
+    inputs:
+      targetType: "inline"
+      script: |
+        echo "Getting latest successful build..."
+
+        # API-URL für den letzten erfolgreichen Build
+        uri="$(System.CollectionUri)$(System.TeamProject)/_apis/build/builds?definitions=$(System.DefinitionId)&resultFilter=succeeded&statusFilter=completed&maxBuildsPerDefinition=1&queryOrder=finishTimeDescending&api-version=6.0"
+        echo $uri
+
+        # API-Aufruf mit curl und dem System Access Token
+        response=$(curl -s -H "Authorization: Bearer $(System.AccessToken)" "$uri")
+
+        # Prüfen, ob die Anfrage erfolgreich war
+        if [[ $response == *"value"* ]]; then
+          # Extrahieren des letzten Builds aus der JSON-Antwort (benötigt jq)
+          latestBuild=$(echo $response | jq '.value[0]')
+          
+          # Extrahieren der Commit-ID
+          commitId=$(echo $latestBuild | jq -r '.sourceVersion')
+          echo "Commit-SHA: $commitId"
+          
+          # Variable für Azure DevOps Pipeline setzen
+          echo "##vso[task.setvariable variable=BASE_SHA]$commitId"
+        else
+          echo "Fehler beim Abrufen des letzten Builds: $response"
+          exit 1
+        fi
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+  - script: |
+      echo "Docker login to $(DOCKER_REGISTRY)"
+      echo "$(DOCKER_PASSWORD)" | docker login --username $(DOCKER_USER) --password-stdin $(DOCKER_REGISTRY)
+    displayName: "Docker Config"
+
+  - script: |
+      npm i -g pnpm
+      pnpm i
+    displayName: "Dependencies"
+
+  - script: |
+      npx turbo run build --filter=...[$(BASE_SHA)] --continue=always
+    displayName: "Build"
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+      TURBO_TELEMETRY_DISABLED: 1
+
+  - script: |
+      npx turbo run docker:build --filter=...[$(BASE_SHA)]
+    displayName: "Docker Build"
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+      TURBO_TELEMETRY_DISABLED: 1
+
+  - script: |
+      npx turbo run docker:push --filter=...[$(BASE_SHA)]
+    displayName: "Docker Push"
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+      TURBO_TELEMETRY_DISABLED: 1
+  

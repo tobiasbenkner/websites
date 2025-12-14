@@ -1,0 +1,44 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--on-background);
+
+    --color-card: var(--surface);
+    --color-card-foreground: var(--on-surface);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--on-primary);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--on-secondary);
+
+    --color-border: var(--border);
+}
+
+.prose {
+    --tw-prose-bold: var(--color-foreground);
+    --tw-prose-body: var(--color-foreground); /* normale Textfarbe */
+    --tw-prose-headings: var(--color-primary); /* Überschriften */
+    --tw-prose-links: var(--color-secondary); /* Links */
+
+    --tw-prose-code: var(--color-foreground);
+}
+
+.prose code::before,
+.prose code::after {
+    content: none !important;
+}
+
+code {
+    white-space: pre-wrap;
+}
+
+/*     
+--color-destructive: var(--destructive);
+--color-accent-foreground: var(--accent-foreground);
+--color-accent: var(--accent);
+--color-muted-foreground: var(--muted-foreground);
+--color-muted: var(--muted);
+*/

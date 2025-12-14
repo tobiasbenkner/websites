@@ -1,0 +1,15 @@
+{
+  "name": "@tobiasbenkner/websites",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "check-types": "turbo run check-types",
+    "update-deps": "npm-check-updates -u --deep"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.5"
+  },
+  "packageManager": "pnpm@10.25.0"
+}
